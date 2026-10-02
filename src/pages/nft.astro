@@ -1,9 +1,18 @@
 ---
 import BlogLayout from '../layouts/BlogLayout.astro'
+import { sanityClient } from '../lib/sanity'
+import { urlFor } from '../lib/sanityImage'
 
 const WALLET = 'tz1a7hywiB1kEWp9kwnkUTfUtDaqsm4XhLXK'
 
-const query = `
+const nftDocs = await sanityClient.fetch(`
+  *[_type == "nftPurchase"] {
+    title, tokenId, faContract, image, artist, artistUrl, supply, purchasedAt, paidMutez, tokenUrl
+  }
+`)
+
+// Live fetch just for current market price, used for sort order only
+const priceQuery = `
 {
   token(
     where: {
@@ -11,47 +20,33 @@ const query = `
     }
   ) {
     token_id
-    name
-    display_uri
-    supply
     fa_contract
     lowest_ask
-    creators {
-      holder { alias website tzdomain }
-    }
-    events(
-      where: { recipient_address: { _eq: "${WALLET}" }, price_xtz: { _gt: "0" } }
-      order_by: { timestamp: desc }
-      limit: 1
-    ) {
-      price_xtz
-      timestamp
-    }
   }
 }
 `
 
-const res = await fetch('https://data.objkt.com/v3/graphql', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ query }),
-})
-const json = await res.json()
-const allTokens = json.data?.token || []
-
-const nfts = allTokens
-  .filter((t: any) => t.events.length > 0 && t.display_uri)
-  .sort((a: any, b: any) => (b.lowest_ask ?? -1) - (a.lowest_ask ?? -1))
-
-function ipfsToHttp(uri: string) {
-  if (!uri) return ''
-
-  if (uri.startsWith('ipfs://')) {
-    return uri.replace(/^ipfs:\/\//, 'https://nftstorage.link/ipfs/')
+let priceMap: Record<string, number | null> = {}
+try {
+  const res = await fetch('https://data.objkt.com/v3/graphql', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: priceQuery }),
+  })
+  const json = await res.json()
+  for (const t of json.data?.token || []) {
+    priceMap[`${t.fa_contract}:${t.token_id}`] = t.lowest_ask
   }
-
-  return uri
+} catch {
+  priceMap = {}
 }
+
+const nfts = nftDocs
+  .map((n: any) => ({
+    ...n,
+    lowestAsk: priceMap[`${n.faContract}:${n.tokenId}`] ?? null,
+  }))
+  .sort((a: any, b: any) => (b.lowestAsk ?? -1) - (a.lowestAsk ?? -1))
 
 function mutezToXtz(mutez: number) {
   return (mutez / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })
@@ -63,16 +58,14 @@ function formatDate(ts: string) {
 
 const nftsJson = JSON.stringify(
   nfts.map((n: any) => ({
-    id: n.token_id,
-    contract: n.fa_contract,
-    name: n.name,
-    image: ipfsToHttp(n.display_uri),
+    name: n.title,
+    image: urlFor(n.image).width(900).url(),
+    artist: n.artist,
+    artistUrl: n.artistUrl || null,
     supply: n.supply,
-    artist: n.creators?.[0]?.holder?.alias || n.creators?.[0]?.holder?.tzdomain || 'Unknown',
-    artistUrl: n.creators?.[0]?.holder?.website || null,
-    purchased: n.events?.[0] ? formatDate(n.events[0].timestamp) : '—',
-    paid: n.events?.[0] ? mutezToXtz(n.events[0].price_xtz) : '—',
-    tokenUrl: `https://objkt.com/tokens/${n.fa_contract}/${n.token_id}`,
+    purchased: n.purchasedAt ? formatDate(n.purchasedAt) : '—',
+    paid: n.paidMutez ? mutezToXtz(n.paidMutez) : '—',
+    tokenUrl: n.tokenUrl,
   }))
 )
 ---
@@ -292,8 +285,7 @@ const nftsJson = JSON.stringify(
     font-size: 0.85rem;
     color: rgba(0, 0, 0, 0.55);
   }
-</style>
-<style>
+
   @media (max-width: 520px) {
     .nft-carousel {
       gap: 0.75rem;
