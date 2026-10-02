@@ -1,0 +1,122 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro'
+import { sanityClient } from '../../lib/sanity'
+import { urlFor } from '../../lib/sanityImage'
+import { toHTML } from '@portabletext/to-html'
+
+export async function getStaticPaths() {
+  const posts = await sanityClient.fetch(`*[_type == "blogPost"]{ "slug": slug.current }`)
+  return posts.map((post: any) => ({ params: { slug: post.slug } }))
+}
+
+const { slug } = Astro.params
+
+const post = await sanityClient.fetch(
+  `*[_type == "blogPost" && slug.current == $slug][0]`,
+  { slug }
+)
+
+const bodyHtml = toHTML(post.body || [], {
+  components: {
+    types: {
+      image: ({ value }: any) =>
+        `<img src="${urlFor(value).width(900).url()}" alt="" loading="lazy" />`,
+    },
+  },
+})
+---
+<BlogLayout title={post.title}>
+  <article class="post">
+    {post.coverImage && (
+      <img class="post-cover" src={urlFor(post.coverImage).width(1200).url()} alt="" />
+    )}
+    <h1 class="post-title">{post.title}</h1>
+    <p class="post-date">
+      {new Date(post.publishedDate).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      })}
+    </p>
+    {post.subtitle && <p class="post-intro">{post.subtitle}</p>}
+    <div class="post-body" set:html={bodyHtml} />
+    {post.closing && <p class="post-closing">{post.closing}</p>}
+    {post.videoLink && (
+      <div class="post-video">
+        <a href={post.videoLink} target="_blank" rel="noopener">Watch the video →</a>
+      </div>
+    )}
+  </article>
+</BlogLayout>
+
+<style>
+  .post {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 5rem;
+  }
+  .post-cover {
+    width: 100%;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+  }
+  .post-title {
+    font-family: var(--font-display);
+    color: var(--color-accent);
+    font-size: 2.25rem;
+    line-height: 1.1;
+    margin: 0 0 0.5rem;
+    text-align: center;
+  }
+  .post-date {
+    font-family: var(--font-body);
+    text-align: center;
+    color: rgba(0, 0, 0, 0.55);
+    font-size: 0.9rem;
+    margin: 0 0 1.75rem;
+  }
+  .post-intro {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 1.4rem;
+    line-height: 1.35;
+    border-right: 4px solid #111;
+    padding-right: 1rem;
+    margin: 0 0 2.5rem;
+  }
+  .post-body :global(p) {
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    margin: 0 0 1.5rem;
+  }
+  .post-body :global(img) {
+    width: 100%;
+    margin: 1.5rem 0;
+    border-radius: 2px;
+  }
+  .post-body :global(ul) {
+    margin: 0 0 1.5rem;
+    padding-left: 1.25rem;
+  }
+  .post-body :global(li) {
+    margin-bottom: 1rem;
+    font-family: var(--font-body);
+    line-height: 1.6;
+  }
+  .post-closing {
+    font-family: var(--font-display);
+    font-style: italic;
+    text-align: center;
+    font-size: 1.1rem;
+    margin-top: 3rem;
+  }
+  .post-video {
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+  .post-video a {
+    color: var(--color-accent);
+    font-family: var(--font-body);
+    text-decoration: underline;
+  }
+</style>
