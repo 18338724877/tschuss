@@ -9,7 +9,7 @@ interface Props {
 }
 const {
   title,
-  headerImage = 'https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6425fbb97c79eca8ff2e4935_der%20blog%20new-p-1600.png',
+  headerImage = '/assets/blog-header-logo.png',
   headerAlt = 'Tschüss der Blog',
   headerMaxWidth = '640px',
   plainBackground = false,
@@ -119,7 +119,7 @@ function isActive(href: string) {
   <body class={plainBackground ? 'plain-bg' : ''}>
     <nav class="site-nav">
       <a class="site-nav-logo" href="/">
-        <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/65516350d6f9d81d7012cb62_choooooose%20icon%20png.png" alt="Tschüss" />
+        <img src="/assets/nav-logo.png" alt="Tschüss" />
       </a>
       <div class="site-nav-links">
         {navLinks.map((link) => (

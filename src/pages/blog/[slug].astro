@@ -39,7 +39,7 @@ const bodyHtml = toHTML(post.body || [], {
     {post.subtitle && <p class="post-intro">{post.subtitle}</p>}
     <div class="post-body" set:html={bodyHtml} />
     {post.closing && <p class="post-closing">{post.closing}</p>}
-    {post.videoLink && (
+    {post.videoLink && typeof post.videoLink === 'string' && (
       <div class="post-video">
         <a href={post.videoLink} target="_blank" rel="noopener">Watch the video →</a>
       </div>

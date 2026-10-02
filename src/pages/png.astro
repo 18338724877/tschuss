@@ -9,19 +9,19 @@ const images = await sanityClient.fetch(`
 ---
 <BlogLayout
   title="PNG's"
-  headerImage="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6499e9ef22d5eaa2ef6fabfb_png%20page%20header%20for%20real-p-1600.png"
+  headerImage="/assets/png-header.png"
   headerAlt="PNG's"
   headerMaxWidth="640px"
   plainBackground={true}
 >
   <div class="png-page">
     <div class="png-gifs-row">
-      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6650b2735594e8da07b58fbb_poster-example-ezgif.com-resize.gif" alt="Poster example" />
-      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6650b2a1815224f5813e3b9c_shirt-example-gif-ezgif.com-resize.gif" alt="Shirt example" />
+      <img src="/assets/png-example-poster.gif" alt="Poster example" />
+      <img src="/assets/png-example-shirt.gif" alt="Shirt example" />
     </div>
 
     <div class="png-speech-bubble">
-      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/663acd5095250af9f70d6e19_pixel-speech-bubble%20(2).gif" alt="Welcome to the Tschuss PNG page. All images below are free for personal or commercial use." />
+      <img src="/assets/png-speech-bubble-top.gif" alt="Welcome to the Tschuss PNG page. All images below are free for personal or commercial use." />
     </div>
 
     <div class="png-grid" id="png-grid">
@@ -33,7 +33,7 @@ const images = await sanityClient.fetch(`
     </div>
 
     <div class="png-speech-bubble png-speech-bubble-bottom">
-      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/663acdcc777d6c7669144a95_pixel-speech-bubble%20(3).gif" alt="" />
+      <img src="/assets/png-speech-bubble-bottom.gif" alt="" />
     </div>
   </div>
 </BlogLayout>
