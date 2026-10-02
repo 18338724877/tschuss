@@ -1,0 +1,321 @@
+---
+import BlogLayout from '../layouts/BlogLayout.astro'
+
+const WALLET = 'tz1a7hywiB1kEWp9kwnkUTfUtDaqsm4XhLXK'
+
+const query = `
+{
+  token(
+    where: {
+      holders: { holder_address: { _eq: "${WALLET}" }, quantity: { _gt: "0" } }
+    }
+  ) {
+    token_id
+    name
+    display_uri
+    supply
+    fa_contract
+    lowest_ask
+    creators {
+      holder { alias website tzdomain }
+    }
+    events(
+      where: { recipient_address: { _eq: "${WALLET}" }, price_xtz: { _gt: "0" } }
+      order_by: { timestamp: desc }
+      limit: 1
+    ) {
+      price_xtz
+      timestamp
+    }
+  }
+}
+`
+
+const res = await fetch('https://data.objkt.com/v3/graphql', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ query }),
+})
+const json = await res.json()
+const allTokens = json.data?.token || []
+
+const nfts = allTokens
+  .filter((t: any) => t.events.length > 0 && t.display_uri)
+  .sort((a: any, b: any) => (b.lowest_ask ?? -1) - (a.lowest_ask ?? -1))
+
+function ipfsToHttp(uri: string) {
+  if (!uri) return ''
+
+  if (uri.startsWith('ipfs://')) {
+    return uri.replace(/^ipfs:\/\//, 'https://nftstorage.link/ipfs/')
+  }
+
+  return uri
+}
+
+function mutezToXtz(mutez: number) {
+  return (mutez / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })
+}
+
+function formatDate(ts: string) {
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const nftsJson = JSON.stringify(
+  nfts.map((n: any) => ({
+    id: n.token_id,
+    contract: n.fa_contract,
+    name: n.name,
+    image: ipfsToHttp(n.display_uri),
+    supply: n.supply,
+    artist: n.creators?.[0]?.holder?.alias || n.creators?.[0]?.holder?.tzdomain || 'Unknown',
+    artistUrl: n.creators?.[0]?.holder?.website || null,
+    purchased: n.events?.[0] ? formatDate(n.events[0].timestamp) : '—',
+    paid: n.events?.[0] ? mutezToXtz(n.events[0].price_xtz) : '—',
+    tokenUrl: `https://objkt.com/tokens/${n.fa_contract}/${n.token_id}`,
+  }))
+)
+---
+<BlogLayout
+  title="NFT's"
+  headerImage="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6483755405aabc361507528c_TSCHUSEUM-p-1600.png"
+  headerAlt="TSCHÜSEUM"
+  headerMaxWidth="900px"
+>
+  <div class="nft-page">
+    <div class="nft-carousel">
+      <button class="nft-arrow" id="nft-prev" aria-label="Previous">←</button>
+
+      <div class="nft-card" id="nft-card">
+        <div class="nft-card-label">objkt.com</div>
+        <h2 class="nft-card-title" id="nft-title"></h2>
+        <div class="nft-card-image-wrap">
+          <img class="nft-card-image" id="nft-image" alt="" loading="eager" />
+        </div>
+        <div class="nft-card-meta">
+          <div class="nft-card-meta-col">
+            <div class="nft-card-meta-row">
+              <span class="nft-card-meta-label">Artist</span>
+              <a id="nft-artist" href="#" target="_blank" rel="noopener"></a>
+            </div>
+            <div class="nft-card-meta-row">
+              <span class="nft-card-meta-label">Edition</span>
+              <span id="nft-edition"></span>
+            </div>
+          </div>
+          <div class="nft-card-meta-col">
+            <div class="nft-card-meta-row">
+              <span class="nft-card-meta-label">Purchased</span>
+              <span id="nft-purchased"></span>
+            </div>
+            <div class="nft-card-meta-row">
+              <span class="nft-card-meta-label">Token Link</span>
+              <a id="nft-tokenlink" href="#" target="_blank" rel="noopener">View</a>
+            </div>
+          </div>
+        </div>
+        <div class="nft-card-footer">
+          <div class="nft-card-price">
+            <span class="nft-card-price-label">Paid</span>
+            <span id="nft-price"></span>
+          </div>
+          <a class="nft-card-button" id="nft-viewbutton" href="#" target="_blank" rel="noopener">View Token</a>
+        </div>
+      </div>
+
+      <button class="nft-arrow" id="nft-next" aria-label="Next">→</button>
+    </div>
+    <div class="nft-counter" id="nft-counter"></div>
+  </div>
+</BlogLayout>
+
+<script type="application/json" id="nft-data" set:html={nftsJson} />
+
+<script>
+  const nfts = JSON.parse(document.getElementById('nft-data')!.textContent!)
+  let current = 0
+
+  const els = {
+    title: document.getElementById('nft-title')!,
+    image: document.getElementById('nft-image') as HTMLImageElement,
+    artist: document.getElementById('nft-artist') as HTMLAnchorElement,
+    edition: document.getElementById('nft-edition')!,
+    purchased: document.getElementById('nft-purchased')!,
+    tokenlink: document.getElementById('nft-tokenlink') as HTMLAnchorElement,
+    price: document.getElementById('nft-price')!,
+    viewbutton: document.getElementById('nft-viewbutton') as HTMLAnchorElement,
+    counter: document.getElementById('nft-counter')!,
+  }
+
+  function render() {
+    const n = nfts[current]
+    els.title.textContent = n.name
+    els.image.src = n.image
+    els.image.alt = n.name
+    els.artist.textContent = n.artist
+    els.artist.href = n.artistUrl || '#'
+    els.edition.textContent = `/ ${n.supply}`
+    els.purchased.textContent = n.purchased
+    els.tokenlink.href = n.tokenUrl
+    els.price.textContent = `XTZ ${n.paid}`
+    els.viewbutton.href = n.tokenUrl
+    els.counter.textContent = `${current + 1} / ${nfts.length}`
+  }
+
+  document.getElementById('nft-prev')?.addEventListener('click', () => {
+    current = (current - 1 + nfts.length) % nfts.length
+    render()
+  })
+  document.getElementById('nft-next')?.addEventListener('click', () => {
+    current = (current + 1) % nfts.length
+    render()
+  })
+
+  render()
+</script>
+
+<style>
+  .nft-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 5rem;
+    text-align: center;
+  }
+  .nft-carousel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+  .nft-arrow {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #7c5cff;
+    background: transparent;
+    color: var(--color-ink);
+    font-size: 1.25rem;
+    cursor: pointer;
+  }
+  .nft-arrow:hover {
+    background: rgba(124, 92, 255, 0.1);
+  }
+  .nft-card {
+    background: #fff;
+    max-width: 420px;
+    width: 100%;
+    padding: 1.75rem;
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+  .nft-card-label {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+  .nft-card-title {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin: 0 0 1.25rem;
+  }
+  .nft-card-image-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 2px;
+    margin-bottom: 1.25rem;
+    background: #eee;
+  }
+  .nft-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .nft-card-meta {
+    display: flex;
+    justify-content: space-between;
+    text-align: left;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+  }
+  .nft-card-meta-row {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  .nft-card-meta-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(0, 0, 0, 0.5);
+  }
+  .nft-card-meta-row a {
+    color: var(--color-accent);
+  }
+  .nft-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .nft-card-price {
+    text-align: left;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.6rem;
+  }
+  .nft-card-price-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.5);
+  }
+  .nft-card-button {
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    padding: 0.85rem 1.5rem;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  .nft-counter {
+    margin-top: 1.5rem;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.55);
+  }
+</style>
+<style>
+  @media (max-width: 520px) {
+    .nft-carousel {
+      gap: 0.75rem;
+    }
+    .nft-arrow {
+      width: 40px;
+      height: 40px;
+      font-size: 1.1rem;
+    }
+    .nft-cards {
+      padding: 1.1rem;
+    }
+    .nft-card-title {
+      font-size: 1.3rem;
+    }
+    .nft-card-meta {
+      gap: 0.5rem;
+    }
+    .nft-card-footer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+  }
+</style>

@@ -1,0 +1,107 @@
+---
+import BlogLayout from '../layouts/BlogLayout.astro'
+import { sanityClient } from '../lib/sanity'
+import { urlFor } from '../lib/sanityImage'
+
+const images = await sanityClient.fetch(`
+  *[_type == "pngImage"] { image, altText }
+`)
+---
+<BlogLayout
+  title="PNG's"
+  headerImage="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6499e9ef22d5eaa2ef6fabfb_png%20page%20header%20for%20real-p-1600.png"
+  headerAlt="PNG's"
+  headerMaxWidth="640px"
+  plainBackground={true}
+>
+  <div class="png-page">
+    <div class="png-gifs-row">
+      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6650b2735594e8da07b58fbb_poster-example-ezgif.com-resize.gif" alt="Poster example" />
+      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6650b2a1815224f5813e3b9c_shirt-example-gif-ezgif.com-resize.gif" alt="Shirt example" />
+    </div>
+
+    <div class="png-speech-bubble">
+      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/663acd5095250af9f70d6e19_pixel-speech-bubble%20(2).gif" alt="Welcome to the Tschuss PNG page. All images below are free for personal or commercial use." />
+    </div>
+
+    <div class="png-grid" id="png-grid">
+      {images.map((item: any) => (
+        <div class="png-cell">
+          <img src={urlFor(item.image).width(500).url()} alt={item.altText || ''} loading="lazy" />
+        </div>
+      ))}
+    </div>
+
+    <div class="png-speech-bubble png-speech-bubble-bottom">
+      <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/663acdcc777d6c7669144a95_pixel-speech-bubble%20(3).gif" alt="" />
+    </div>
+  </div>
+</BlogLayout>
+
+<script>
+  const grid = document.getElementById('png-grid')
+  if (grid) {
+    const cells = Array.from(grid.children)
+    for (let i = cells.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[cells[i], cells[j]] = [cells[j], cells[i]]
+    }
+    const chosen = cells.slice(0, 100)
+    const dropped = cells.slice(100)
+    dropped.forEach((cell) => cell.remove())
+    chosen.forEach((cell) => grid.appendChild(cell))
+  }
+</script>
+
+<style>
+  .png-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 5rem;
+  }
+  .png-gifs-row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 1.5rem;
+    margin: 0 0 2.5rem;
+  }
+  .png-gifs-row img {
+    width: 220px;
+    max-width: 40vw;
+    height: auto;
+  }
+  .png-speech-bubble {
+    max-width: 600px;
+    margin: 0 auto 3rem;
+  }
+  .png-speech-bubble img {
+    width: 100%;
+    display: block;
+  }
+  .png-speech-bubble-bottom {
+    margin: 3rem auto 0;
+  }
+  .png-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.9rem;
+  }
+  .png-cell {
+    width: 160px;
+    height: 160px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .png-cell img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+</style>

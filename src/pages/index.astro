@@ -1,11 +1,25 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import BlogLayout from '../layouts/BlogLayout.astro'
 ---
+<BlogLayout title="Home" hideHeader={true} plainBackground={true}>
+  <div class="coming-soon">
+    <p>Coming Soon</p>
+  </div>
+</BlogLayout>
 
-<Layout>
-	<Welcome />
-</Layout>
+<style>
+  .coming-soon {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .coming-soon p {
+    font-family: 'Helvetica Neue', 'Arial Narrow', Arial, sans-serif;
+    font-stretch: condensed;
+    font-size: 36pt;
+    color: #111;
+    margin: 0;
+  }
+</style>

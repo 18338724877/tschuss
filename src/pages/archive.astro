@@ -1,0 +1,101 @@
+---
+import BlogLayout from '../layouts/BlogLayout.astro'
+import { sanityClient } from '../lib/sanity'
+import { urlFor } from '../lib/sanityImage'
+
+const items = await sanityClient.fetch(`
+  *[_type == "archiveItem"] | order(_createdAt asc) {
+    title, description, images
+  }
+`)
+
+function linkify(text: string) {
+  if (!text) return ''
+  return text.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>'
+  )
+}
+---
+<BlogLayout title="Archive">
+  <div class="archive-page">
+    <div class="archive-list">
+      {items.map((item: any) => (
+        <div class="archive-item">
+          <div class="archive-item-images">
+            {item.images?.map((img: any) => (
+              <img src={urlFor(img).width(700).url()} alt="" loading="lazy" />
+            ))}
+          </div>
+          <h2 class="archive-item-title">{item.title}</h2>
+          <p class="archive-item-description" set:html={linkify(item.description)} />
+        </div>
+      ))}
+    </div>
+  </div>
+</BlogLayout>
+
+<style>
+  .archive-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 5rem;
+  }
+  .archive-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+  }
+  .archive-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    padding-bottom: 3rem;
+  }
+  .archive-item-images {
+    display: grid;
+    grid-template-columns: repeat(2, 460px);
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+  }
+  .archive-item-images img {
+    width: 460px;
+    height: 460px;
+    object-fit: cover;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.4);
+  }
+  .archive-item-title {
+    font-family: var(--font-display);
+    color: var(--color-accent);
+    font-size: 1.5rem;
+    margin: 0 auto 0.75rem;
+    line-height: 1.2;
+    max-width: 920px;
+    text-align: left;
+  }
+  .archive-item-description {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--color-ink);
+    margin: 0 auto;
+    max-width: 920px;
+    text-align: left;
+  }
+  .archive-item-description :global(a) {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 1000px) {
+    .archive-item-images {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .archive-item-images img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+    }
+  }
+</style>

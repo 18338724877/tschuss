@@ -1,0 +1,103 @@
+---
+import BlogLayout from '../../layouts/BlogLayout.astro'
+import { sanityClient } from '../../lib/sanity'
+import { urlFor } from '../../lib/sanityImage'
+
+const posts = await sanityClient.fetch(`
+  *[_type == "blogPost"] | order(publishedDate desc) {
+    title, subtitle, slug, publishedDate, coverImage, body
+  }
+`)
+
+function firstImage(post: any) {
+  if (post.coverImage) return post.coverImage
+  const found = (post.body || []).find((block: any) => block._type === 'image')
+  return found || null
+}
+---
+<BlogLayout title="Blog">
+  <div class="post-list">
+    {posts.map((post: any) => {
+      const img = firstImage(post)
+      return (
+        <a class="post-list-item" href={`/blog/${post.slug.current}`}>
+          <div class="post-list-text">
+            <span class="post-list-date">
+              {new Date(post.publishedDate).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric',
+              })}
+            </span>
+            <h2 class="post-list-title">{post.title}</h2>
+            {post.subtitle && <p class="post-list-subtitle">{post.subtitle}</p>}
+          </div>
+          {img && (
+            <img class="post-list-thumb" src={urlFor(img).width(400).height(400).url()} alt="" />
+          )}
+        </a>
+      )
+    })}
+  </div>
+</BlogLayout>
+
+<style>
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+  .post-list-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 180px;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    padding-bottom: 2rem;
+  }
+  .post-list-text {
+    max-width: 75%;
+  }
+  .post-list-date {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.55);
+    letter-spacing: 0.02em;
+  }
+  .post-list-title {
+    font-family: var(--font-display);
+    color: var(--color-accent);
+    font-size: 1.75rem;
+    margin: 0.35rem 0 0.4rem;
+    line-height: 1.15;
+  }
+  .post-list-subtitle {
+    font-family: var(--font-body);
+    color: rgba(0, 0, 0, 0.75);
+    font-size: 1rem;
+    margin: 0;
+  }
+  .post-list-thumb {
+    position: absolute;
+    top: 50%;
+    right: calc(50% - 50vw + 100px);
+    transform: translateY(-50%);
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 2px;
+  }
+</style>
+<style>
+  @media (max-width: 700px) {
+    .post-list-thumb {
+      display: none;
+    }
+    .post-list-text {
+      max-width: 100%;
+    }
+  }
+</style>

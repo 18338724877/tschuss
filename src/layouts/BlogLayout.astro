@@ -1,0 +1,149 @@
+---
+interface Props {
+  title: string
+  headerImage?: string
+  headerAlt?: string
+  headerMaxWidth?: string
+  plainBackground?: boolean
+  hideHeader?: boolean
+}
+const {
+  title,
+  headerImage = 'https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/6425fbb97c79eca8ff2e4935_der%20blog%20new-p-1600.png',
+  headerAlt = 'Tschüss der Blog',
+  headerMaxWidth = '640px',
+  plainBackground = false,
+  hideHeader = false,
+} = Astro.props
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/'
+
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Blog", href: "/blog" },
+  { label: "Archive", href: "/archive" },
+  { label: "NFT's", href: "/nft" },
+  { label: "PNG's", href: "/png" },
+  { label: "1-833", href: "/1833" },
+]
+
+function isActive(href: string) {
+  const normalized = href.replace(/\/$/, '') || '/'
+  return normalized === currentPath
+}
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} — Tschüß</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,600&family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --color-bg: #EDE9DA;
+        --color-grid: rgba(0, 0, 0, 0.06);
+        --color-ink: #171717;
+        --color-accent: #2A4B9E;
+        --font-display: 'Lora', Georgia, serif;
+        --font-body: 'Inter', system-ui, sans-serif;
+        --font-pixel: 'Press Start 2P', monospace;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background-color: var(--color-bg);
+        background-image:
+          linear-gradient(var(--color-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+        background-size: 24px 24px;
+        color: var(--color-ink);
+      }
+      body.plain-bg {
+        background-color: #ffffff;
+        background-image: none;
+      }
+      .site-nav {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.25rem 1.5rem 0;
+      }
+      .site-nav-logo {
+        position: absolute;
+        left: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .site-nav-logo img {
+        width: 44px;
+        height: 44px;
+        display: block;
+      }
+      .site-nav-links {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 1.05rem;
+      }
+      .site-nav-links a {
+        color: var(--color-ink);
+        text-decoration: none;
+      }
+      .site-nav-links a.active {
+        color: var(--color-accent);
+      }
+      .site-nav-links a:hover {
+        text-decoration: underline;
+      }
+      .site-header {
+        text-align: center;
+        padding: 2rem 1rem 1rem;
+      }
+      .site-header-logo {
+        max-width: var(--header-max-width, 420px);
+        width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body class={plainBackground ? 'plain-bg' : ''}>
+    <nav class="site-nav">
+      <a class="site-nav-logo" href="/">
+        <img src="https://cdn.prod.website-files.com/636a8d89ddf0767a45170bb8/65516350d6f9d81d7012cb62_choooooose%20icon%20png.png" alt="Tschüss" />
+      </a>
+      <div class="site-nav-links">
+        {navLinks.map((link) => (
+          <a href={link.href} class={isActive(link.href) ? 'active' : ''}>{link.label}</a>
+        ))}
+      </div>
+    </nav>
+    {!hideHeader && (
+      <header class="site-header" style={`--header-max-width: ${headerMaxWidth}`}>
+        <img class="site-header-logo" src={headerImage} alt={headerAlt} />
+      </header>
+    )}
+    <slot />
+  </body>
+</html>
+<style>
+  @media (max-width: 600px) {
+    .site-nav-logo {
+      display: none;
+    }
+    .site-nav-links {
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      padding: 0 0.5rem;
+    }
+  }
+</style>
