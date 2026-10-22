@@ -27,7 +27,12 @@ const images = await sanityClient.fetch(`
     <div class="png-grid" id="png-grid">
       {images.map((item: any) => (
         <div class="png-cell">
-          <img src={urlFor(item.image).width(500).url()} alt={item.altText || ''} loading="lazy" />
+          <img
+            src={urlFor(item.image).width(500).url()}
+            data-full={urlFor(item.image).width(1600).url()}
+            alt={item.altText || ''}
+            loading="lazy"
+          />
         </div>
       ))}
     </div>
@@ -35,6 +40,10 @@ const images = await sanityClient.fetch(`
     <div class="png-speech-bubble png-speech-bubble-bottom">
       <img src="/assets/png-speech-bubble-bottom.gif" alt="" />
     </div>
+  </div>
+
+  <div id="lightbox-overlay" class="lightbox-overlay">
+    <img id="lightbox-image" src="" alt="" />
   </div>
 </BlogLayout>
 
@@ -51,6 +60,40 @@ const images = await sanityClient.fetch(`
     dropped.forEach((cell) => cell.remove())
     chosen.forEach((cell) => grid.appendChild(cell))
   }
+
+  const overlay = document.getElementById('lightbox-overlay')
+  const overlayImg = document.getElementById('lightbox-image') as HTMLImageElement | null
+
+  function openLightbox(src: string, alt: string) {
+    if (!overlay || !overlayImg) return
+    overlayImg.src = src
+    overlayImg.alt = alt
+    overlay.classList.add('is-open')
+  }
+
+  function closeLightbox() {
+    if (!overlay || !overlayImg) return
+    overlay.classList.remove('is-open')
+    overlayImg.src = ''
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    const cellImg = target.closest('.png-cell img') as HTMLImageElement | null
+    if (cellImg) {
+      e.preventDefault()
+      const full = cellImg.getAttribute('data-full') || cellImg.src
+      openLightbox(full, cellImg.alt)
+      return
+    }
+    if (overlay && overlay.classList.contains('is-open')) {
+      closeLightbox()
+    }
+  })
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox()
+  })
 </script>
 
 <style>
@@ -96,10 +139,33 @@ const images = await sanityClient.fetch(`
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    cursor: zoom-in;
   }
   .png-cell img {
     max-width: 100%;
     max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 4vh 4vw;
+    cursor: zoom-out;
+  }
+  .lightbox-overlay.is-open {
+    display: flex;
+  }
+  .lightbox-overlay img {
+    max-width: 92vw;
+    max-height: 92vh;
     width: auto;
     height: auto;
     object-fit: contain;
