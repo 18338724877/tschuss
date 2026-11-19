@@ -12,7 +12,7 @@ const items = await sanityClient.fetch(`
 function linkify(text: string) {
   if (!text) return ''
   return text.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
+    /\[([^\]]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g,
     '<a href="$2" target="_blank" rel="noopener">$1</a>'
   )
 }
